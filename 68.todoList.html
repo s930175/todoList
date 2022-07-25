@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ToDoList—JQ寫的代辦事項列表</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            background: #CDCDCD;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        header {
+            height: 50px;
+            background: #333;
+            background: rgba(47, 47, 47, 0.98);
+        }
+
+        section {
+            margin: 0 auto;
+        }
+
+        label {
+            float: left;
+            width: 100px;
+            line-height: 50px;
+            color: #DDD;
+            font-size: 24px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        header input {
+            float: right;
+            width: 60%;
+            height: 24px;
+            margin-top: 12px;
+            text-indent: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.24), 0 1px 6px rgba(0, 0, 0, 0.45) inset;
+            border: none
+        }
+
+        input:focus {
+            outline-width: 0
+        }
+
+        h2 {
+            position: relative;
+        }
+
+        span {
+            position: absolute;
+            top: 2px;
+            right: 5px;
+            display: inline-block;
+            padding: 0 5px;
+            height: 20px;
+            border-radius: 20px;
+            background: #E6E6FA;
+            line-height: 22px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        ol,
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        li input {
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        p {
+            margin: 0;
+        }
+
+        li p input {
+            top: 3px;
+            left: 40px;
+            width: 70%;
+            height: 20px;
+            line-height: 14px;
+            text-indent: 5px;
+            font-size: 14px;
+        }
+
+        li {
+            height: 32px;
+            line-height: 32px;
+            background: #fff;
+            position: relative;
+            margin-bottom: 10px;
+            padding: 0 45px;
+            border-radius: 3px;
+            border-left: 5px solid #629A9C;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+        }
+
+        ol li {
+            cursor: move;
+        }
+
+        ul li {
+            border-left: 5px solid #999;
+            opacity: 0.5;
+        }
+
+        li a {
+            position: absolute;
+            top: 2px;
+            right: 5px;
+            display: inline-block;
+            width: 14px;
+            height: 12px;
+            border-radius: 14px;
+            border: 6px double #FFF;
+            background: #CCC;
+            line-height: 14px;
+            text-align: center;
+            color: #FFF;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        footer {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        footer a {
+            color: #666;
+            text-decoration: none;
+            color: #999;
+        }
+
+        @media screen and (max-device-width: 620px) {
+            section {
+                width: 96%;
+                padding: 0 2%;
+            }
+        }
+
+        @media screen and (min-width: 620px) {
+            section {
+                width: 600px;
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <section>
+            <label for="title">ToDoList</label>
+            <input type="text" id="title" name="title" placeholder="添加ToDo" required="required" autocomplete="off" />
+        </section>
+    </header>
+    <section>
+        <h2>正在進行 <span id="todocount"></span></h2>
+        <ol id="todolist" class="demo-box">
+
+        </ol>
+        <h2>已經完成 <span id="donecount"></span></h2>
+        <ul id="donelist">
+
+        </ul>
+    </section>
+    <footer>
+        Copyright &copy; 2022 todolist.tw
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+        referrerpolicy="no-referrer"></script>
+    <script>
+        $(function () {
+            load()
+            // 儲存數據格式: let todolist = [{title:"xxx",done:false}]
+            $('#title').on('keydown', function (event) {
+                if (event.keyCode == 13) {
+                    if ($(this).val() == "") {
+                        return false
+                    } else {
+                        // 先讀取localStorage，返回值存到local這個變數裡
+                        let local = getData()
+                        // console.log(local)
+                        // 把local數組進行更新數據，把最新的數據追加給local數組
+                        local.push({ title: $(this).val(), done: false })
+                        // console.log(local)
+                        // 把這個數組存儲給localStorage
+                        saveData(local)
+                        // 把數據渲染到頁面上
+                        load()
+                        $(this).val('')
+                    }
+
+                }
+            })
+            // 刪除操作，a是動態生成所以用on綁定，且每個a是表兄弟關係
+            $('ol, ul').on('click', 'a', function () {
+                // alert(11)
+                // 先獲取本地存儲
+                let data = getData()
+                // 修改數據
+                let index = $(this).attr("index")
+                // console.log(index)
+                // 刪除(splice(從哪開始,刪幾個))後保存到本地存儲
+                data.splice(index, 1)
+                saveData(data)
+                // 重新渲染頁面
+                load()
+            })
+            // todoList是在ol還是ul(已完成或未完成)操作
+            $("ol, ul").on('click', "input", function () {
+                // 先獲取本地存儲數據
+                let data = getData()
+                // 修改數據(input的兄弟a有index，可以藉由a的index來判斷拿到哪個input)
+                let index = $(this).siblings("a").attr("index")
+                // console.log(index)
+                // 點擊後checked==true,done也跟著==true
+                // 再點擊後又變回false
+                data[index].done = $(this).prop('checked')
+                console.log($(this).prop('checked'))
+                // 保存到本地存儲裡
+                saveData(data)
+                // 重新渲染頁面
+                load()
+            })
+
+            // 讀取localStorage
+            function getData() {
+                let data = localStorage.getItem('todolist');
+                if (data !== null) {
+                    return JSON.parse(data)
+                } else {
+                    return [];
+                }
+            }
+            // 保存本地存儲數據
+            function saveData(data) {
+                localStorage.setItem("todolist", JSON.stringify(data))
+            }
+            // 渲染加載數據
+            function load() {
+                let data = getData()
+                // 遍歷前先清空ol裡的內容
+                $("ol, ul").empty()
+                // 統計個數
+                let todoCount = 0//正在進行的個數
+                let doneCount = 0//已經完成的個數
+                // 遍歷數據
+                $.each(data, function (i, n) {
+                    // console.log(i, n)
+                    if (n.done) {
+                        $('ul').prepend("<li><input type='checkbox' checked><p>" + n.title + "</p><a href='javascript:;' index=" + i + "></a></li>")
+                        doneCount++
+                    } else {
+                        // prepend是追加(新增到最上面)，所以要先清空再追加才不會有兩份一樣的數據
+                        $('ol').prepend("<li><input type='checkbox'><p>" + n.title + "</p><a href='javascript:;' index=" + i + "></a></li>")
+                        todoCount++
+                    }
+
+                })
+                $('#todocount').text(todoCount)
+                $('#donecount').text(doneCount)
+            }
+
+        })
+    </script>
+</body>
+
+</html>
