@@ -211,6 +211,43 @@
 
                 }
             })
+            // 修改功能
+            $('ol li').on('dblclick', 'p', function (e) {
+                let data = getData()
+                window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty();
+                let str = this.innerHTML;
+                let oldStr = "";
+                data.forEach(element => {
+                    if (element.title == str) oldStr = str
+                });
+                // console.log(oldStr)
+                // console.log(str);
+                this.innerHTML = '<input type="text" />';
+                // console.log(this)//p
+                let input = this.children[0]
+                input.value = str;
+                // 文本框的文字處於選定狀態
+                input.select();
+                input.onblur = function () {
+                    // 這裡的this指向input
+                    // console.log(this)
+                    if (str == "") return false
+                    this.parentNode.innerHTML = this.value
+                    data.forEach(element => {
+                        if (element.title == oldStr) element.title = this.value
+                    });
+                    saveData(data)
+                    // 重新渲染頁面
+                    load()
+                }
+                input.onkeyop = function (e) {
+                    if (e.keyCode == 13) {
+                        // 手動調用表單失去焦點事件
+                        this.onblur()
+                    }
+                }
+
+            })
             // 刪除操作，a是動態生成所以用on綁定，且每個a是表兄弟關係
             $('ol, ul').on('click', 'a', function () {
                 // alert(11)
@@ -226,7 +263,7 @@
                 load()
             })
             // todoList是在ol還是ul(已完成或未完成)操作
-            $("ol, ul").on('click', "input", function () {
+            $("ol, ul").on('click', "input:checkbox", function () {
                 // 先獲取本地存儲數據
                 let data = getData()
                 // 修改數據(input的兄弟a有index，可以藉由a的index來判斷拿到哪個input)
