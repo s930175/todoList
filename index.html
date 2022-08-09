@@ -214,6 +214,7 @@
             // 修改功能
             $('ol li').on('dblclick', 'p', function (e) {
                 let data = getData()
+                // 取消雙擊選中效果
                 window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty();
                 let str = this.innerHTML;
                 let oldStr = "";
@@ -235,6 +236,7 @@
                     this.parentNode.innerHTML = this.value
                     data.forEach(element => {
                         if (element.title == oldStr) element.title = this.value
+                        exit()
                     });
                     saveData(data)
                     // 重新渲染頁面
